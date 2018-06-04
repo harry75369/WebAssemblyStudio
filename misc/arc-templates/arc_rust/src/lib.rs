@@ -1,79 +1,46 @@
 static mut module_instance: *mut ArcModule = 0 as *mut ArcModule;
 
-#[repr(C)]
-#[derive(Copy)]
-pub struct Rgb {
-  r: u8,
-  g: u8,
-  b: u8,
-}
+// `mod` is how Rust pulls in code from other files.
+// They contain some boilerplate and helper code to 
+// make it a bit easier for you to get up and running.
+// You can take a look at them (they're in the sidebar)!
+mod arc_module;
+mod color;
+mod utils;
 
-impl Rgb {
-  pub fn new(r: u8, g: u8, b: u8) -> Rgb {
-    Rgb {r, g, b}
-  }
-}
+use arc_module::ArcModule;
+use color::Rgb;
 
-impl Clone for Rgb {
-  fn clone(&self) -> Rgb { *self }
-}
+pub use utils::getAnimationBuffer;
+pub use utils::init;
 
-struct ArcModule {
-  rows: usize,
-  cols: usize,
-  frame_count: usize,
-  fps: usize,
-  is_first: bool,
-  animation: Vec<Rgb>
-}
 
-impl ArcModule {
-  pub fn create_instance(rows: usize, cols: usize, frame_count: usize, fps: usize, is_first: bool) -> &'static ArcModule {
-    let buffer_size = rows * cols * frame_count;
-    let mut module = ArcModule {
-      rows,
-      cols,
-      frame_count,
-      fps,
-      is_first,
-      animation: Vec::with_capacity(buffer_size)
-    };
-    module.animation.resize(buffer_size, Rgb::new(0, 0, 0));
-    module.animation[0] = Rgb {r: 2, g: 4, b: 10};
-    unsafe { module_instance = Box::into_raw(Box::new(module)) };
-    ArcModule::get_instance()
-  }
-
-  pub fn get_instance<'a>() -> &'a mut ArcModule {
-    unsafe { &mut *module_instance }
-  }
-
-  pub fn get_animation<'a>(&'a mut self) -> &'a mut Vec<Rgb> {
-    &mut self.animation
-  }
-}
+// We'll modify this apply function to create our animation.
 
 #[no_mangle]
-pub extern fn init(rows: usize, cols: usize, frame_count: usize, fps: usize, is_first: bool) {
-  ArcModule::create_instance(rows, cols, frame_count, fps, is_first);
-}
+pub extern "C" fn apply() {
 
-#[no_mangle]
-pub extern fn getAnimationBuffer() -> *const Rgb {
-  ArcModule::get_instance().get_animation().as_ptr()
-}
+    // To create our animation we'll first create a module. We'll
+    // mutate this to create our animation.
+    let mut module = ArcModule::get_instance();
 
-#[no_mangle]
-pub extern fn apply() {
-  let mut module = ArcModule::get_instance();
-  let rows = module.rows;
-  let cols = module.cols;
-  let ref mut animation = module.get_animation().as_mut_slice();
-  for (index, frame) in animation.chunks_mut(rows * cols).enumerate() {
-    for row in 0 .. rows {
-      for col in 0 .. cols {
-        frame[row * cols + col] = Rgb::new(row as u8 * 6, col as u8 * 6, ((index * 6) % 0xffusize) as u8);
-      }
+    // There are 44 rows
+    let rows = module.rows;
+
+    // There are 36 columns
+    let cols = module.cols;
+
+    // This is our animation.
+    let animation = module.get_animation().as_mut_slice();
+    for (index, frame) in animation.chunks_mut(rows * cols).enumerate() {
+        for row in 0..rows {
+            for col in 0..cols {
+                frame[row * cols + col] = Rgb::new(
+                    row as u8 * 5,
+                    col as u8 * 5,
+                    ((index * 5) % 0xffusize) as u8,
+                );
+            }
+        }
     }
-  }
 }

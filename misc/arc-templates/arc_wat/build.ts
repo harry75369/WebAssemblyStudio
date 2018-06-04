@@ -8,11 +8,10 @@ gulp.task("build", async () => {
 });
 
 gulp.task("publish", async () => {
-    const rows = 36, cols = 44, frameCount = 1050, fps = 35;
+    const rows = 44, cols = 36, frameCount = 1050, fps = 35;
     const { transform } = await (await Service.import('src/module.js')).default();
     const buffer = new ArrayBuffer(cols * rows * frameCount * 3);
     transform(buffer, rows, cols, frameCount, fps, true);
-    const animation = Arc.animationBufferToJSON(buffer, rows, cols, frameCount);
 
     const jsModule = project.getFile("src/module.js").getData();
     const watSource = project.getFile("src/module.wat").getData();
@@ -25,7 +24,7 @@ gulp.task("publish", async () => {
             cols,
             frameCount,
             fps,
-            data: animation,
+            data: buffer,
         },
         entry: "src/module.js",
         files: {

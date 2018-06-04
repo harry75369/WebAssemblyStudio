@@ -246,18 +246,7 @@ export class Service {
       file.setProblems([]);
     }
 
-    const resultItemsIterable = {
-      [Symbol.iterator]: function*() {
-        if (!result.items) {
-          return;
-        }
-        for (const name of Object.keys(result.items)) {
-          yield {name, item: result.items[name]};
-        }
-      }
-    };
-
-    for (const { name, item } of resultItemsIterable) {
+    for (const [ name, item ] of Object.entries(result.items)) {
       const { fileRef, console } = item;
       if (!fileRef || !console) {
         continue;
@@ -280,7 +269,7 @@ export class Service {
     }
 
     const outputFiles: any = {};
-    for (const { name, item } of resultItemsIterable) {
+    for (const [ name, item ] of Object.entries(result.items)) {
       const { content } = item;
       if (content) {
         outputFiles[name] = content;
